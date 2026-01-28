@@ -81,7 +81,6 @@ public class TaleNameCommand extends CommandBase {
 
         ctx.sendMessage(Message.raw("Linking..."));
 
-        Universe universe = Universe.get();
         HytaleServer server = HytaleServer.get();
 
         TaleNameAPI.ServerInfo info = new TaleNameAPI.ServerInfo(server.getServerName(),
@@ -135,7 +134,7 @@ public class TaleNameCommand extends CommandBase {
                     (plugin.getHeartbeatService().isRunning() ? "RUNNING" : "STOPPED")));
         } else {
             ctx.sendMessage(Message.raw("Status: NOT LINKED"));
-            ctx.sendMessage(Message.raw("Use /talename link <code>"));
+            ctx.sendMessage(Message.raw("Use /talename link --code=<code>"));
         }
     }
 
