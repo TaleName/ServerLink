@@ -6,12 +6,14 @@ import net.talename.serverLink.command.TaleNameCommand;
 import net.talename.serverLink.config.ConfigManager;
 import net.talename.serverLink.service.HeartbeatService;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
-import org.slf4j.Logger;
+
+import java.util.logging.Logger;
 
 public class Main extends JavaPlugin {
 
+    private static final Logger LOGGER = Logger.getLogger("TaleName-ServerLink");
+
     private static Main instance;
-    private Logger logger;
     private ConfigManager configManager;
     private HeartbeatService heartbeatService;
 
@@ -21,37 +23,36 @@ public class Main extends JavaPlugin {
     }
 
     @Override
-    public void onEnable() {
-        this.logger = getLogger();
-        logger.info("TaleName ServerLink is starting...");
+    protected void setup() {
+        LOGGER.info("TaleName ServerLink is starting...");
 
         this.configManager = new ConfigManager(this);
         configManager.loadConfig();
 
         TaleNameCommand taleNameCommand = new TaleNameCommand(this);
-        getServer().getCommandManager().registerCommand(taleNameCommand);
+        getCommandRegistry().registerCommand(taleNameCommand);
 
         this.heartbeatService = new HeartbeatService(this);
-        
+
         if (configManager.isLinked()) {
-            logger.info("Server is linked. Starting heartbeat service...");
+            LOGGER.info("Server is linked. Starting heartbeat service...");
             heartbeatService.start();
         } else {
-            logger.info("Server not linked. Use /talename link <code> to link.");
+            LOGGER.info("Server not linked. Use /talename link <code> to link.");
         }
 
-        logger.info("TaleName ServerLink enabled!");
+        LOGGER.info("TaleName ServerLink enabled!");
     }
 
     @Override
-    public void onDisable() {
+    protected void shutdown() {
         if (heartbeatService != null) {
             heartbeatService.stop();
         }
         if (configManager != null) {
             configManager.saveConfig();
         }
-        logger.info("TaleName ServerLink disabled!");
+        LOGGER.info("TaleName ServerLink disabled!");
     }
 
     public static Main getInstance() {
@@ -67,6 +68,6 @@ public class Main extends JavaPlugin {
     }
 
     public Logger getPluginLogger() {
-        return logger;
+        return LOGGER;
     }
 }

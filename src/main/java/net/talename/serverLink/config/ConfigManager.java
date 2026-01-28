@@ -18,12 +18,12 @@ public class ConfigManager {
     public ConfigManager(Main plugin) {
         this.plugin = plugin;
         this.gson = new GsonBuilder().setPrettyPrinting().create();
-        this.configPath = plugin.getDataFolder().toPath().resolve("serverlink.json");
+        this.configPath = plugin.getDataDirectory().resolve("serverlink.json");
     }
 
     public void loadConfig() {
         try {
-            Files.createDirectories(plugin.getDataFolder().toPath());
+            Files.createDirectories(plugin.getDataDirectory());
 
             if (Files.exists(configPath)) {
                 String json = Files.readString(configPath);
@@ -33,7 +33,7 @@ public class ConfigManager {
                 saveConfig();
             }
         } catch (IOException e) {
-            plugin.getPluginLogger().error("Failed to load config: " + e.getMessage());
+            plugin.getPluginLogger().warning("Failed to load config: " + e.getMessage());
             config = new ServerLinkConfig();
         }
     }
@@ -43,7 +43,7 @@ public class ConfigManager {
             Files.createDirectories(configPath.getParent());
             Files.writeString(configPath, gson.toJson(config));
         } catch (IOException e) {
-            plugin.getPluginLogger().error("Failed to save config: " + e.getMessage());
+            plugin.getPluginLogger().warning("Failed to save config: " + e.getMessage());
         }
     }
 

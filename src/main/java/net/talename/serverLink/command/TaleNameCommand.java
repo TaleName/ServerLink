@@ -1,131 +1,152 @@
 package net.talename.serverLink.command;
 
-import com.hypixel.hytale.server.core.Server;
-import com.hypixel.hytale.server.core.command.Command;
-import com.hypixel.hytale.server.core.command.CommandContext;
-import com.hypixel.hytale.server.core.command.CommandSender;
-import com.hypixel.hytale.server.core.command.annotation.*;
-import com.hypixel.hytale.server.core.entity.player.Player;
-import com.hypixel.hytale.server.core.permission.Permission;
-import com.hypixel.hytale.server.core.text.Text;
-import com.hypixel.hytale.server.core.text.TextColor;
+import com.hypixel.hytale.server.core.HytaleServer;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
+import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
+import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
+import com.hypixel.hytale.server.core.universe.Universe;
 import net.talename.serverLink.Main;
 import net.talename.serverLink.api.TaleNameAPI;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-@CommandInfo(name = "talename", description = "TaleName server linking", aliases = {"tn"})
-public class TaleNameCommand implements Command {
+import javax.annotation.Nonnull;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
+public class TaleNameCommand extends CommandBase {
 
     private final Main plugin;
-    private static final String PERM = "talename.admin";
+
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    @Nonnull
+    private final RequiredArg<String> subArg =
+            withRequiredArg("subcommand", "link/unlink/status/heartbeat", ArgTypes.STRING);
+
+    @Nonnull
+    private final OptionalArg<String> codeArg =
+            withOptionalArg("code", "The 6-character TaleName link code.", ArgTypes.STRING);
 
     public TaleNameCommand(Main plugin) {
+        super("talename", "TaleName server linking", false);
         this.plugin = plugin;
     }
 
     @Override
-    public void execute(CommandContext context) {
-        CommandSender sender = context.getSender();
-        sender.sendMessage(Text.of("=== TaleName Commands ===").color(TextColor.GOLD));
-        sender.sendMessage(Text.of("/talename link <code>").color(TextColor.YELLOW).append(Text.of(" - Link server").color(TextColor.GRAY)));
-        sender.sendMessage(Text.of("/talename unlink").color(TextColor.YELLOW).append(Text.of(" - Unlink server").color(TextColor.GRAY)));
-        sender.sendMessage(Text.of("/talename status").color(TextColor.YELLOW).append(Text.of(" - Check status").color(TextColor.GRAY)));
+    protected void executeSync(@NonNull CommandContext commandContext) {
+        String sub = subArg.get(commandContext).toLowerCase();
+
+        switch (sub) {
+            case "link":
+                handleLink(commandContext);
+                break;
+            case "unlink":
+                handleUnlink(commandContext);
+                break;
+            case "status":
+                handleStatus(commandContext);
+                break;
+            case "heartbeat":
+                handleHeartbeat(commandContext);
+                break;
+            default:
+                sendHelp(commandContext);
+                break;
+        }
     }
 
-    @Subcommand("link")
-    @Description("Link server to TaleName")
-    @Permission(value = PERM, defaultValue = Permission.Default.OP)
-    public void linkCommand(CommandContext context, @Argument("code") String linkCode) {
-        CommandSender sender = context.getSender();
+    private void sendHelp(CommandContext ctx) {
+        ctx.sendMessage(Message.raw("=== TaleName Commands ==="));
+        ctx.sendMessage(Message.raw("/talename link <code> - Link server"));
+        ctx.sendMessage(Message.raw("/talename unlink - Unlink server"));
+        ctx.sendMessage(Message.raw("/talename status - Check status"));
+        ctx.sendMessage(Message.raw("/talename heartbeat - Force send heartbeat"));
+    }
+
+    private void handleLink(CommandContext ctx) {
+        String linkCode = codeArg.get(ctx);
 
         if (plugin.getConfigManager().isLinked()) {
-            sender.sendMessage(Text.of("Server already linked! Use /talename unlink first.").color(TextColor.RED));
+            ctx.sendMessage(Message.raw("Server already linked! Use /talename unlink first."));
             return;
         }
 
         if (linkCode == null || linkCode.length() != 6) {
-            sender.sendMessage(Text.of("Invalid code! Get your 6-char code from talename.net/settings").color(TextColor.RED));
+            ctx.sendMessage(Message.raw("Invalid code! Get your 6-char code from talename.net/settings"));
             return;
         }
 
-        sender.sendMessage(Text.of("Linking...").color(TextColor.YELLOW));
+        ctx.sendMessage(Message.raw("Linking..."));
 
-        Server server = plugin.getServer();
-        TaleNameAPI.ServerInfo info = new TaleNameAPI.ServerInfo(
-                server.getIp(), server.getPort(), server.getVersion(),
-                "Hytale", server.getMotd(), server.getMaxPlayers()
+        Universe universe = Universe.get();
+        HytaleServer server = HytaleServer.get();
+
+        TaleNameAPI.ServerInfo info = new TaleNameAPI.ServerInfo(server.getServerName(),
+                "Hytale", server.getConfig().getMotd(), server.getConfig().getMaxPlayers()
         );
 
         plugin.getHeartbeatService().getApi().linkServer(linkCode.toUpperCase(), info)
                 .thenAccept(response -> {
-                    server.getScheduler().runTask(() -> {
+                    // Use ScheduledExecutorService instead of server scheduler
+                    scheduler.execute(() -> {
                         if (response.success()) {
                             plugin.getConfigManager().setLinkData(response.serverToken(), response.serverId());
-                            sender.sendMessage(Text.of("Server linked! ID: " + response.serverId()).color(TextColor.GREEN));
+                            ctx.sendMessage(Message.raw("Server linked! ID: " + response.serverId()));
                             plugin.getHeartbeatService().start();
                         } else {
-                            sender.sendMessage(Text.of("Failed: " + response.message()).color(TextColor.RED));
+                            ctx.sendMessage(Message.raw("Failed: " + response.message()));
                         }
                     });
                 });
     }
 
-    @Subcommand("unlink")
-    @Description("Unlink server from TaleName")
-    @Permission(value = PERM, defaultValue = Permission.Default.OP)
-    public void unlinkCommand(CommandContext context) {
-        CommandSender sender = context.getSender();
-
+    private void handleUnlink(CommandContext ctx) {
+        // /talename unlink
         if (!plugin.getConfigManager().isLinked()) {
-            sender.sendMessage(Text.of("Server is not linked!").color(TextColor.RED));
+            ctx.sendMessage(Message.raw("Server is not linked!"));
             return;
         }
 
-        sender.sendMessage(Text.of("Unlinking...").color(TextColor.YELLOW));
+        ctx.sendMessage(Message.raw("Unlinking..."));
+
         String token = plugin.getConfigManager().getServerToken();
-        Server server = plugin.getServer();
 
         plugin.getHeartbeatService().getApi().unlinkServer(token)
                 .thenAccept(response -> {
-                    server.getScheduler().runTask(() -> {
+                    scheduler.execute(() -> {
                         plugin.getHeartbeatService().stop();
                         plugin.getConfigManager().clearLinkData();
-                        sender.sendMessage(Text.of("Server unlinked!").color(TextColor.GREEN));
+                        ctx.sendMessage(Message.raw("Server unlinked!"));
                     });
                 });
     }
 
-    @Subcommand("status")
-    @Description("Check TaleName link status")
-    @Permission(value = PERM, defaultValue = Permission.Default.OP)
-    public void statusCommand(CommandContext context) {
-        CommandSender sender = context.getSender();
-
-        sender.sendMessage(Text.of("=== TaleName Status ===").color(TextColor.GOLD));
+    private void handleStatus(CommandContext ctx) {
+        // /talename status
+        ctx.sendMessage(Message.raw("=== TaleName Status ==="));
 
         if (plugin.getConfigManager().isLinked()) {
-            sender.sendMessage(Text.of("Status: ").color(TextColor.WHITE).append(Text.of("LINKED").color(TextColor.GREEN)));
-            sender.sendMessage(Text.of("Server ID: " + plugin.getConfigManager().getServerId()).color(TextColor.GRAY));
-            sender.sendMessage(Text.of("Heartbeat: ").color(TextColor.WHITE)
-                    .append(Text.of(plugin.getHeartbeatService().isRunning() ? "RUNNING" : "STOPPED")
-                            .color(plugin.getHeartbeatService().isRunning() ? TextColor.GREEN : TextColor.RED)));
+            ctx.sendMessage(Message.raw("Status: LINKED"));
+            ctx.sendMessage(Message.raw("Server ID: " + plugin.getConfigManager().getServerId()));
+            ctx.sendMessage(Message.raw("Heartbeat: " +
+                    (plugin.getHeartbeatService().isRunning() ? "RUNNING" : "STOPPED")));
         } else {
-            sender.sendMessage(Text.of("Status: ").color(TextColor.WHITE).append(Text.of("NOT LINKED").color(TextColor.RED)));
-            sender.sendMessage(Text.of("Use /talename link <code>").color(TextColor.GRAY));
+            ctx.sendMessage(Message.raw("Status: NOT LINKED"));
+            ctx.sendMessage(Message.raw("Use /talename link <code>"));
         }
     }
 
-    @Subcommand("heartbeat")
-    @Description("Force send heartbeat")
-    @Permission(value = PERM, defaultValue = Permission.Default.OP)
-    public void heartbeatCommand(CommandContext context) {
-        CommandSender sender = context.getSender();
-
+    private void handleHeartbeat(CommandContext ctx) {
+        // /talename heartbeat
         if (!plugin.getConfigManager().isLinked()) {
-            sender.sendMessage(Text.of("Server not linked!").color(TextColor.RED));
+            ctx.sendMessage(Message.raw("Server not linked!"));
             return;
         }
 
         plugin.getHeartbeatService().sendHeartbeatNow();
-        sender.sendMessage(Text.of("Heartbeat sent!").color(TextColor.GREEN));
+        ctx.sendMessage(Message.raw("Heartbeat sent!"));
     }
 }

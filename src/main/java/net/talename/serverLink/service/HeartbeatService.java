@@ -1,7 +1,8 @@
 package net.talename.serverLink.service;
 
-import com.hypixel.hytale.server.core.Server;
-import com.hypixel.hytale.server.core.entity.player.Player;
+import com.hypixel.hytale.server.core.HytaleServer;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import net.talename.serverLink.Main;
 import net.talename.serverLink.api.TaleNameAPI;
 
@@ -65,7 +66,7 @@ public class HeartbeatService {
                         consecutiveFailures = 0;
                     } else {
                         consecutiveFailures++;
-                        plugin.getPluginLogger().warn("Heartbeat failed: " + response.message());
+                        plugin.getPluginLogger().warning("Heartbeat failed: " + response.message());
                         if (response.message().contains("Invalid server token")) {
                             plugin.getConfigManager().clearLinkData();
                             stop();
@@ -75,16 +76,15 @@ public class HeartbeatService {
     }
 
     private TaleNameAPI.HeartbeatData collectHeartbeatData() {
-        Server server = plugin.getServer();
-        List<Player> players = server.getOnlinePlayers();
+        Universe universe = Universe.get();
+        HytaleServer server = HytaleServer.get();
+        List<PlayerRef> players = universe.getPlayers();
         
         return new TaleNameAPI.HeartbeatData(
-                players.size(),
-                server.getMaxPlayers(),
-                server.getMotd(),
-                server.getVersion(),
-                server.getTps(),
-                players.stream().map(Player::getName).collect(Collectors.toList())
+                universe.getPlayerCount(),
+                server.getConfig().getMaxPlayers(),
+                server.getConfig().getMotd(),
+                players.stream().map(PlayerRef::getUuid).collect(Collectors.toList())
         );
     }
 

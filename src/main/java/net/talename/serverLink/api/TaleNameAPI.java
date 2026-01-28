@@ -10,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class TaleNameAPI {
@@ -33,9 +34,6 @@ public class TaleNameAPI {
         body.addProperty("linkCode", linkCode.toUpperCase());
         
         JsonObject serverInfoJson = new JsonObject();
-        serverInfoJson.addProperty("ipAddress", serverInfo.ipAddress);
-        serverInfoJson.addProperty("port", serverInfo.port);
-        serverInfoJson.addProperty("version", serverInfo.version);
         serverInfoJson.addProperty("software", serverInfo.software);
         serverInfoJson.addProperty("motd", serverInfo.motd);
         serverInfoJson.addProperty("maxPlayers", serverInfo.maxPlayers);
@@ -68,8 +66,6 @@ public class TaleNameAPI {
         body.addProperty("playersOnline", data.playersOnline);
         body.addProperty("maxPlayers", data.maxPlayers);
         body.addProperty("motd", data.motd);
-        body.addProperty("version", data.version);
-        body.addProperty("tps", data.tps);
         if (data.playerList != null && !data.playerList.isEmpty()) {
             body.add("playerList", gson.toJsonTree(data.playerList));
         }
@@ -121,6 +117,6 @@ public class TaleNameAPI {
     public record UnlinkResponse(boolean success, String message) {}
 
     // Data classes
-    public record ServerInfo(String ipAddress, int port, String version, String software, String motd, int maxPlayers) {}
-    public record HeartbeatData(int playersOnline, int maxPlayers, String motd, String version, double tps, List<String> playerList) {}
+    public record ServerInfo(String name, String software, String motd, int maxPlayers) {}
+    public record HeartbeatData(int playersOnline, int maxPlayers, String motd, List<UUID> playerList) {}
 }
