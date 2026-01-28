@@ -29,7 +29,3 @@ All commands require **operator permission**.
 ```bash
 ./gradlew build
 ```
-
-## License
-
-MIT License
