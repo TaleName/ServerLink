@@ -2,15 +2,31 @@
   "Group": "TaleName",
   "Name": "ServerLink",
   "Version": "1.0.0",
-  "Description": "Let you link your server to TaleName.net",
+  "Description": "Link your Hytale server to TaleName.net - Display your server on the TaleName server list with automatic status updates",
   "Authors": [
     {
-      "Name": "Fyz"
+      "Name": "Fyz",
+      "Url": "https://talename.net"
     }
   ],
   "Main": "net.talename.serverLink.Main",
   "ServerVersion": "*",
   "Dependencies": {},
   "OptionalDependencies": {},
-  "DisabledByDefault": false
+  "DisabledByDefault": false,
+  "Permissions": [
+    {
+      "Name": "talename.admin",
+      "Description": "Allows access to all TaleName commands (link, unlink, status, heartbeat)",
+      "Default": "op"
+    }
+  ],
+  "Commands": [
+    {
+      "Name": "talename",
+      "Aliases": ["tn"],
+      "Description": "TaleName server linking commands",
+      "Permission": "talename.admin"
+    }
+  ]
 }

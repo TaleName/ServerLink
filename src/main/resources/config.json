@@ -1,5 +1,7 @@
 {
-  "pluginName": "TaleName-Server-Link",
-  "version": "1.0.0",
-  "debugMode": false
+  "apiBaseUrl": "https://api.talename.net",
+  "heartbeatIntervalSeconds": 300,
+  "serverToken": null,
+  "serverId": null,
+  "linkedAt": null
 }
