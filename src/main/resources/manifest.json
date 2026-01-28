@@ -1,0 +1,16 @@
+{
+  "Group": "TaleName",
+  "Name": "ServerLink",
+  "Version": "1.0.0",
+  "Description": "Let you link your server to TaleName.net",
+  "Authors": [
+    {
+      "Name": "Fyz"
+    }
+  ],
+  "Main": "net.talename.serverLink.Main",
+  "ServerVersion": "*",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "DisabledByDefault": false
+}
