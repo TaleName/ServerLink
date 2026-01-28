@@ -76,8 +76,15 @@ public class ConfigManager {
         return config != null ? config.serverId : null;
     }
 
+    public boolean isDevMode() {
+        return config != null && config.devMode;
+    }
+
     public String getApiBaseUrl() {
-        return config != null ? config.apiBaseUrl : ServerLinkConfig.DEFAULT_API_URL;
+        if (config == null) {
+            return ServerLinkConfig.PROD_API_URL;
+        }
+        return config.devMode ? ServerLinkConfig.DEV_API_URL : ServerLinkConfig.PROD_API_URL;
     }
 
     public int getHeartbeatInterval() {
@@ -85,13 +92,14 @@ public class ConfigManager {
     }
 
     public static class ServerLinkConfig {
-        public static final String DEFAULT_API_URL = "https://api.talename.net";
+        public static final String PROD_API_URL = "https://api.talename.net";
+        public static final String DEV_API_URL = "https://api.talename.local";
         public static final int DEFAULT_HEARTBEAT_INTERVAL = 300;
 
         public String serverToken;
         public Long serverId;
         public Long linkedAt;
-        public String apiBaseUrl = DEFAULT_API_URL;
+        public boolean devMode = false;
         public int heartbeatIntervalSeconds = DEFAULT_HEARTBEAT_INTERVAL;
     }
 }

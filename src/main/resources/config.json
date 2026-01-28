@@ -1,5 +1,5 @@
 {
-  "apiBaseUrl": "https://api.talename.net",
+  "devMode": false,
   "heartbeatIntervalSeconds": 300,
   "serverToken": null,
   "serverId": null,

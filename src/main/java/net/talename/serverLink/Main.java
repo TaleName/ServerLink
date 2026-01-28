@@ -38,7 +38,7 @@ public class Main extends JavaPlugin {
             LOGGER.info("Server is linked. Starting heartbeat service...");
             heartbeatService.start();
         } else {
-            LOGGER.info("Server not linked. Use /talename link <code> to link.");
+            LOGGER.info("Server not linked. Use /talename link --code=<code> to link.");
         }
 
         LOGGER.info("TaleName ServerLink enabled!");

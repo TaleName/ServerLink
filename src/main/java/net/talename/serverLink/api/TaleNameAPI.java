@@ -4,10 +4,16 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.talename.serverLink.Main;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -24,9 +30,48 @@ public class TaleNameAPI {
         this.plugin = plugin;
         this.gson = new Gson();
         this.baseUrl = plugin.getConfigManager().getApiBaseUrl();
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+        this.httpClient = plugin.getConfigManager().isDevMode()
+                ? createInsecureHttpClient()
+                : HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+    }
+
+    private static HttpClient createInsecureHttpClient() {
+        try {
+            TrustManager[] trustAll = new TrustManager[] {
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+                    }
+            };
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAll, new SecureRandom());
+
+            SSLParameters sslParameters = new SSLParameters();
+            // Disable hostname verification (dev mode only).
+            sslParameters.setEndpointIdentificationAlgorithm(null);
+
+            return HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .sslContext(sslContext)
+                    .sslParameters(sslParameters)
+                    .build();
+        } catch (Exception e) {
+            // If something goes wrong, fall back to the default client.
+            return HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+        }
     }
 
     public CompletableFuture<LinkResponse> linkServer(String linkCode, ServerInfo serverInfo) {
