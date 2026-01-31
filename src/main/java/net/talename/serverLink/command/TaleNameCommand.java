@@ -108,19 +108,8 @@ public class TaleNameCommand extends CommandBase {
             ctx.sendMessage(Message.raw("Server is not linked!"));
             return;
         }
-
-        ctx.sendMessage(Message.raw("Unlinking..."));
-
-        String token = plugin.getConfigManager().getServerToken();
-
-        plugin.getHeartbeatService().getApi().unlinkServer(token)
-                .thenAccept(response -> {
-                    scheduler.execute(() -> {
-                        plugin.getHeartbeatService().stop();
-                        plugin.getConfigManager().clearLinkData();
-                        ctx.sendMessage(Message.raw("Server unlinked!"));
-                    });
-                });
+        plugin.getHeartbeatService().stop();
+        plugin.getConfigManager().clearLinkData();
     }
 
     private void handleStatus(CommandContext ctx) {

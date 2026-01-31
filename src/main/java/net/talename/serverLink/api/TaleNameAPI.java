@@ -136,30 +136,9 @@ public class TaleNameAPI {
                 .exceptionally(e -> new HeartbeatResponse(false, "Connection failed"));
     }
 
-    public CompletableFuture<UnlinkResponse> unlinkServer(String serverToken) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/serverlinker/unlink"))
-                .header("Content-Type", "application/json")
-                .header("X-Server-Token", serverToken)
-                .timeout(Duration.ofSeconds(30))
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
-                    if (response.statusCode() == 200) {
-                        return new UnlinkResponse(true, "Unlinked");
-                    }
-                    JsonObject json = gson.fromJson(response.body(), JsonObject.class);
-                    return new UnlinkResponse(false, json.has("error") ? json.get("error").getAsString() : "Error");
-                })
-                .exceptionally(e -> new UnlinkResponse(false, "Connection failed"));
-    }
-
     // Response classes
     public record LinkResponse(boolean success, String serverToken, Long serverId, String message) {}
     public record HeartbeatResponse(boolean success, String message) {}
-    public record UnlinkResponse(boolean success, String message) {}
 
     // Data classes
     public record ServerInfo(String name, String software, String motd, int maxPlayers) {}
