@@ -21,7 +21,6 @@ All commands require **operator permission**.
 | Command | Description |
 |---------|-------------|
 | `/talename link <code>` | Link server to TaleName |
-| `/talename unlink` | Unlink server |
 | `/talename status` | Check link status |
 
 ## Building

@@ -17,7 +17,7 @@
   "Permissions": [
     {
       "Name": "talename.admin",
-      "Description": "Allows access to all TaleName commands (link, unlink, status, heartbeat)",
+      "Description": "Allows access to all TaleName commands (link, status, heartbeat)",
       "Default": "op"
     }
   ],

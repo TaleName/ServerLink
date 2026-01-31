@@ -24,7 +24,7 @@ public class TaleNameCommand extends CommandBase {
 
     @Nonnull
     private final RequiredArg<String> subArg =
-            withRequiredArg("subcommand", "link/unlink/status/heartbeat", ArgTypes.STRING);
+            withRequiredArg("subcommand", "link/status/heartbeat", ArgTypes.STRING);
 
     @Nonnull
     private final OptionalArg<String> codeArg =
@@ -43,9 +43,6 @@ public class TaleNameCommand extends CommandBase {
             case "link":
                 handleLink(commandContext);
                 break;
-            case "unlink":
-                handleUnlink(commandContext);
-                break;
             case "status":
                 handleStatus(commandContext);
                 break;
@@ -61,7 +58,6 @@ public class TaleNameCommand extends CommandBase {
     private void sendHelp(CommandContext ctx) {
         ctx.sendMessage(Message.raw("=== TaleName Commands ==="));
         ctx.sendMessage(Message.raw("/talename link <code> - Link server"));
-        ctx.sendMessage(Message.raw("/talename unlink - Unlink server"));
         ctx.sendMessage(Message.raw("/talename status - Check status"));
         ctx.sendMessage(Message.raw("/talename heartbeat - Force send heartbeat"));
     }
@@ -70,7 +66,7 @@ public class TaleNameCommand extends CommandBase {
         String linkCode = codeArg.get(ctx);
 
         if (plugin.getConfigManager().isLinked()) {
-            ctx.sendMessage(Message.raw("Server already linked! Use /talename unlink first."));
+            ctx.sendMessage(Message.raw("Server already linked."));
             return;
         }
 
@@ -89,36 +85,14 @@ public class TaleNameCommand extends CommandBase {
 
         plugin.getHeartbeatService().getApi().linkServer(linkCode.toUpperCase(), info)
                 .thenAccept(response -> {
-                    // Use ScheduledExecutorService instead of server scheduler
                     scheduler.execute(() -> {
                         if (response.success()) {
                             plugin.getConfigManager().setLinkData(response.serverToken(), response.serverId());
-                            ctx.sendMessage(Message.raw("Server linked! ID: " + response.serverId()));
+                            ctx.sendMessage(Message.raw("Done! Check the TaleName website to continue with the process."));
                             plugin.getHeartbeatService().start();
                         } else {
                             ctx.sendMessage(Message.raw("Failed: " + response.message()));
                         }
-                    });
-                });
-    }
-
-    private void handleUnlink(CommandContext ctx) {
-        // /talename unlink
-        if (!plugin.getConfigManager().isLinked()) {
-            ctx.sendMessage(Message.raw("Server is not linked!"));
-            return;
-        }
-
-        ctx.sendMessage(Message.raw("Unlinking..."));
-
-        String token = plugin.getConfigManager().getServerToken();
-
-        plugin.getHeartbeatService().getApi().unlinkServer(token)
-                .thenAccept(response -> {
-                    scheduler.execute(() -> {
-                        plugin.getHeartbeatService().stop();
-                        plugin.getConfigManager().clearLinkData();
-                        ctx.sendMessage(Message.raw("Server unlinked!"));
                     });
                 });
     }
