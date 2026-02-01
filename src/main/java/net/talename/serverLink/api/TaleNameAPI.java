@@ -110,7 +110,6 @@ public class TaleNameAPI {
         JsonObject body = new JsonObject();
         body.addProperty("playersOnline", data.playersOnline);
         body.addProperty("maxPlayers", data.maxPlayers);
-        body.addProperty("motd", data.motd);
         if (data.playerList != null && !data.playerList.isEmpty()) {
             body.add("playerList", gson.toJsonTree(data.playerList));
         }
